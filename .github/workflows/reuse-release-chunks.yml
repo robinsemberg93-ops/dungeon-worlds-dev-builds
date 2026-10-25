@@ -1,0 +1,37 @@
+name: Reuse release chunks
+run-name: Reuse chunks ${{ inputs.request_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_id:
+        required: true
+        type: string
+      target_id:
+        required: true
+        type: string
+      request_id:
+        required: true
+        type: string
+      reuse_hashes:
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: chunk-copy-${{ inputs.target_id }}
+  cancel-in-progress: false
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Verify and copy unchanged compressed chunks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_ID: ${{ inputs.source_id }}
+          TARGET_ID: ${{ inputs.target_id }}
+          REUSE_HASHES: ${{ inputs.reuse_hashes }}
+        run: python3 tools/copy_release_chunks.py
